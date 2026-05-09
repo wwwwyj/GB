@@ -1,0 +1,21 @@
+pdfplumber
+python-docx
+pandas
+openpyxl
+pydantic
+pyyaml
+python-dotenv
+openai
+httpx
+scikit-learn
+rapidfuzz
+beautifulsoup4
+
+# OCR runs in the paddleocr3 Docker container.
+# Keep OCR packages inside that container, not in the Windows Pytorch environment.
+# paddlepaddle-gpu
+# paddleocr>=3.0
+
+# Optional embedding RAG. Keep disabled in config until a local model is ready.
+# sentence-transformers
+# faiss-cpu

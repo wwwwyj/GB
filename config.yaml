@@ -1,0 +1,101 @@
+﻿## input：输入和输出路径配置，命令行参数可以临时覆盖这里的值
+input:
+  file_path: "input/GBT+3880.1-2023(1).pdf"  # 文档路径
+  input_dir: ""  # 批量处理目录；为空时只处理 file_path
+  recursive: true  # 批量目录是否递归扫描子目录
+  output_dir: "output"  # 所有结果文件输出到该目录下
+  supported_extensions:  # 批量处理时允许进入流程的文件类型
+    - ".pdf"  # PDF 标准文件
+    - ".docx"  # Word 文档
+    - ".json"  # JSON 文件
+    - ".md"  # Markdown 文件
+    - ".markdown"  # Markdown 长扩展名
+    - ".txt"  # 纯文本文件
+    - ".png"  # 图片文件
+    - ".jpg"  # JPG 图片
+    - ".jpeg"  # JPEG 图片
+
+## runtime：运行模式配置，控制单模型/双模型和是否真实调用 API
+runtime:
+  mode: "dual"  # single 表示只跑一个模型，dual 表示同时跑模型 A 和模型 B
+  single_model: "model_a"  # mode=single 时生效，可选 model_a 或 model_b
+  skip_model_calls: false  # true 时不调用模型，只生成空模板和验证解析/输出链路
+
+## models：模型 A/B 配置，调用方式兼容 OpenAI SDK 和 SiliconFlow API
+models:
+  model_a:
+    provider: "siliconflow"  # 供应商标记，目前用于记录
+    label: "deepseek-ai/DeepSeek-V4-Flash"  # Excel 中显示的模型 A 标签
+    model_name: "deepseek-ai/DeepSeek-V4-Flash"  # API 调用的模型名称
+    base_url: "https://api.siliconflow.cn/v1"  # OpenAI-compatible API 地址
+    api_key: ""  # 模型 A 的 API key，直接填在这里，例如 sk-xxxx
+    api_key_env: "SILICONFLOW_API_KEY"  # API key 环境变量名
+    timeout: 120  # API 请求超时时间，单位秒
+    max_retries: 3  # OpenAI SDK 自动重试次数
+    disable_proxy: true  # true 表示 httpx 不读取系统代理
+  model_b:
+    provider: "siliconflow"  # 供应商标记
+    label: "Qwen/Qwen3.6-35B-A3B"  # Excel 中显示的模型 B 标签
+    model_name: "Qwen/Qwen3.6-35B-A3B"  # API 调用的模型名称
+    base_url: "https://api.siliconflow.cn/v1"  # OpenAI-compatible API 地址
+    api_key: ""  # 模型 B 的 API key；如果和模型 A 相同，也可以填同一个 key
+    api_key_env: "SILICONFLOW_API_KEY"  # API key 环境变量名
+    timeout: 120  # API 请求超时时间，单位秒
+    max_retries: 3  # OpenAI SDK 自动重试次数
+    disable_proxy: true  # true 表示 httpx 不读取系统代理
+
+## extraction：字段清单和提示词配置，字段来自“提取结果”Excel 的规范解读表头
+extraction:
+  sheet_name: "规范解读"  # 主输出 sheet 名，和模板保持一致
+  fields:
+    - "规范号"  # 标准编号，如 AMS4333、GBT3191
+    - "规范版本"  # 标准版本字母或修订号
+    - "规范年代"  # 标准发布年份
+    - "规范名称"  # 标准完整名称，可包含中英文
+    - "材料类型"  # 材料大类，如铝合金、钢等
+    - "规范原始材料牌号"  # 标准中的原始材料牌号或成分表达
+    - "材料典型特性"  # 材料特性，如耐腐蚀、高强度等
+    - "应用场景"  # 标准中描述的用途或应用场景
+    - "热处理方式"  # 固溶、时效、退火等热处理状态
+    - "制品形式"  # 板、带、箔、锻件、棒材等产品形式
+    - "规格分段数"  # 规格区间分段数量
+    - "英制规格区间in"  # 英制规格区间
+    - "公制规格区间mm"  # 公制规格区间
+    - "成分相似牌号"  # 相似或对应牌号
+  prompts_file: "prompts/prompts.yaml"  # 后续人工补充字段分组提示词的文件
+
+## ocr：OCR 配置；PDF 和图片统一只走 PaddleOCR
+ocr:
+  enabled: true  # 是否启用 OCR
+  engine: "paddleocr"  # OCR 引擎名称
+  device: "gpu:0"  # PaddleOCR 3.x GPU device; use "cpu" for CPU mode
+  language: "ch"  # OCR 语言配置
+  table_structure: true  # 预留表格结构识别开关
+  table_engine: "pp_structure_v3"  # 表格结构识别使用 PP-StructureV3
+  use_formula_recognition: false  # 标准表格优先，默认关闭公式识别以减少额外模型开销
+  use_chart_recognition: false  # 默认不做图表识别
+  use_seal_recognition: false  # 默认不做印章识别
+  save_raw_ocr: true  # 是否在 raw_document.json 中保留 PaddleOCR 原始行、置信度、坐标
+  save_visualization: true  # 是否保存 PaddleOCR 3.x 识别结果对比图
+  visualization_dir_name: "ocr_visualization"  # OCR 对比图输出目录名称
+  result_json_dir_name: "ocr_result_json"  # PaddleOCR 3.x 原始 JSON 结果输出目录名称
+  structure_result_dir_name: "structure_result"  # PP-StructureV3 原始结构结果输出目录名称
+
+## rag：低相似度字段召回配置，默认用 TF-IDF，不强依赖 embedding 模型
+rag:
+  enabled: true  # 是否启用 RAG 召回
+  similarity_threshold: 0.8  # 低于该相似度进入人工复核
+  chunk_size: 1200  # 文本 chunk 最大字符数
+  chunk_overlap: 180  # 相邻 chunk 重叠字符数
+  top_k: 5  # 每个低相似度字段召回的片段数量
+  use_embeddings: false  # true 时优先使用 sentence-transformers embedding
+  embedding_model: ""  # embedding 模型名或本地路径；为空时回退 TF-IDF
+
+## output：输出文件配置，控制中间文件和 Excel 文件是否保存
+output:
+  excel_name: "final_review_result.xlsx"  # 最终复核 Excel 文件名
+  save_raw_document: true  # 是否保存 raw_document.json
+  save_chunks: true  # 是否保存 chunks.json
+  save_model_json: true  # 是否保存 model_outputs.json
+  save_individual_model_excels: true  # 是否保存模型 A/B 单独提取结果 Excel
+
